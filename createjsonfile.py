@@ -1,7 +1,9 @@
 #encoding=utf-8
-import  json
+import  ujson
 import  redis
+import random
 
+json=ujson
 basedir='/home/meng/papershow/20141027-2229-4ftymps-hierarchy-export/'
 filenames=["Act.EduInst_hierarchy-entity-cobweb-partitioning_decreasing_20140624-0705-4ldfadv.json",
 "Act.EduInst_hierarchy-entity-cobweb-partitioning_increasing_20140624-0705-3z6b8kn.json",
@@ -73,17 +75,86 @@ dataset_db_map["Spec"]=7
 dataset_db_map["Tunn"]=8
 from bisect import bisect_left
 
+nodenumi=0
+
 def binary_search(a, x, lo=0, hi=None):   # can't use a to specify default for hi
     hi = hi if hi is not None else len(a) # hi defaults to len(a)   
     pos = bisect_left(a,x,lo,hi)          # find insertion position
     return (pos if pos != hi and a[pos] == x else -1) # don't walk off the end
+
+def dealnode(node,candidateentities):
+    global nodenumi
+    print 'processing node NO.',nodenumi
+    nodenumi=nodenumi+1
+    entities=candidateentities
+    attributes=node['attributes']
+    print 'entities count:',len(entities)
+    print 'attributes count:',len(attributes)
+
+
+    countatt=[None]*len(attributes)
+    for  i,a in  enumerate(attributes) :
+        sum=0
+        for e in entities:
+            sum=sum+countone(e,a)
+        countatt[i]=[sum,a]
+    countatt.sort(cmp=lambda x,y : cmp(x[0], y[0]),key=None,reverse=True)
+    countattTop5=countatt[0:5]
+    showattr=[]
+    att_label=[]
+    for v in countattTop5:
+        showattr.append(v[1]) 
+        att_label.append(a_l[str(v[1])])
+        
+
+    countentities=[None]*len(entities)
+    for i,e in enumerate(entities):
+        sum=0
+        for  a in  attributes :
+            sum=sum+countone(e,a)
+        countentities[i]=[sum,e]
+
+    countentities.sort(cmp=lambda x,y : cmp(x[0], y[0]),key=None,reverse=True)
+    
+
+    countentitiesTop5=countentities[0:5]
+    showentities=[]
+    entities_lable=[]
+    
+    for v in countentitiesTop5:
+        showentities.append(v[1])
+        entities_lable.append(e_l[str(v[1])])
+    
+
+    e_a_v_table=[]  
+    for e in showentities:
+        e_all_attr=[]
+        for a in showattr:
+            attValue=getValue(e,a)
+            e_all_attr.append(attValue)
+        e_a_v_table.append(e_all_attr)
+    node['table']=e_a_v_table
+    node['att_label']=att_label
+    node['entities_lable']=entities_lable
+    return showentities
+
+def pullentity(node):
+    if len(node['children'])==0:
+        return dealnode(node,node['entities'])  
+    else:
+        entitiesGot=[]
+        for c in node['children']:
+            entitiesGot=entitiesGot+pullentity(c)
+        return dealnode(node,entitiesGot)
+
+
 
 for filename in filenames:
     try:
         filename.index('spectral');
     except:
         continue
-    
+    nodenumi=0
     print 'loading json tree:',filename
     tree = json.loads(open(basedir+filename).read())
     
@@ -94,17 +165,17 @@ for filename in filenames:
     attribute_labels_p=tree['attribute_labels']
     e_a=[]
     
-    print 'creating  e_l'
+     
     e_l=dict()
     for e_l_p in entity_labels_p:
         e_l[str(e_l_p['id'])]=e_l_p['label']
       
-    print 'creating  a_l'  
+    
     a_l=dict()
     for   a_l_p in attribute_labels_p:
         a_l[str(a_l_p['id'])]=a_l_p['label']
       
-    print 'creating  e_a_p'
+ 
     for v in e_a_p:
         e_a.append(str(v['entity'])+'*'+str(v['attribute']))
     e_a.sort()
@@ -127,71 +198,9 @@ for filename in filenames:
             countnode(c)
     
     
-    def processNode(node):
-        print 'processing a node'
-        entities=node['entities']
-        attributes=node['attributes']
-        print 'entities count:',len(entities)
-        print 'attributes count:',len(attributes)
-        
-        #
-        print 'countging sum atts'
-        countatt=[None]*len(attributes)
-        for  i,a in  enumerate(attributes) :
-            sum=0
-            for e in entities:
-                sum=sum+countone(e,a)
-            countatt[i]=[sum,a]
-        print 'sorting'
-        countatt.sort(cmp=lambda x,y : cmp(x[0], y[0]),key=None,reverse=True)
-        print 'find 5 atts'
-        countattTop5=countatt[0:5]
-        showattr=[]
-        att_label=[]
-        for v in countattTop5:
-            showattr.append(v[1]) 
-            att_label.append(a_l[str(v[1])])
-            
-        #
-        print 'countging sum entities'
-        countentities=[None]*len(entities)
-        for i,e in enumerate(entities):
-            sum=0
-            for  a in  attributes :
-                sum=sum+countone(e,a)
-            countentities[i]=[sum,e]
-        print 'sorting'
-        countentities.sort(cmp=lambda x,y : cmp(x[0], y[0]),key=None,reverse=True)
-        
-        print 'find 5 entities'
-        countentitiesTop5=countentities[0:5]
-        showentities=[]
-        entities_lable=[]
-        
-        for v in countentitiesTop5:
-            showentities.append(v[1])
-            entities_lable.append(e_l[str(v[1])])
-        
-        # 
-        print 'creating e_a_v_table'
-        e_a_v_table=[]  
-        for e in showentities:
-            e_all_attr=[]
-            for a in showattr:
-                attValue=getValue(e,a)
-                e_all_attr.append(attValue)
-            e_a_v_table.append(e_all_attr)
-        node['table']=e_a_v_table
-        node['att_label']=att_label
-        node['entities_lable']=entities_lable
-        print 'created e_a_v_table'
-        #print e_a_v_table
-       # print ''
-    
-    
     def createpage(root):
         
-        processNode(root)
+        pullentity(root)
         for c in root['children']:
             createpage(c)
      
@@ -201,9 +210,9 @@ for filename in filenames:
     countnode(tree['root'])   
     print "Has ",nodecount," nodes"
          
-    print 'creating  page'
+ 
     
-    createpage(tree['root'])  
+    pullentity(tree['root'])  
     root=tree['root']
     
     
