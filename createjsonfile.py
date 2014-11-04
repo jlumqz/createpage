@@ -127,7 +127,7 @@ def chooseatts(node):
         chooseAttrAtOneNode(node,entities)
         return entities
 
-def chooseEntitiesOneNode(node,entities,attibutes):
+def chooseEntitiesOneNodeLeaf(node,entities,attibutes):
     countentities=[None]*len(entities)
     for i,e in enumerate(entities):
         sum=0
@@ -144,16 +144,26 @@ def chooseEntitiesOneNode(node,entities,attibutes):
     node['entities_lable']=entities_lable
     node['showentities']=showentities
 
+
+def chooseEntitiesOneNodeInternal(node,entities):
+    showentities=random.sample(entities,5 if len(entities)>5 else len(entities) )
+    entities_lable=[]
+    for v in showentities:
+        entities_lable.append(e_l[str(v)])
+    node['entities_lable']=entities_lable
+    node['showentities']=showentities
+    
+    
 def chooseEntities(node,pushedAtts):
     attributes=pushedAtts+node['showattr']
     if len(node['children'])==0:
-        chooseEntitiesOneNode(node,node['entities'],attributes)
+        chooseEntitiesOneNodeLeaf(node,node['entities'],attributes)
         return node['showentities']
     else:
         entities=[]
         for c in node['children']:
             entities=entities+chooseEntities(c,attributes)
-        chooseEntitiesOneNode(node,entities,attributes)
+        chooseEntitiesOneNodeInternal(node,entities)
         return entities
 
 
