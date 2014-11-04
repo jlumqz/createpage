@@ -82,46 +82,24 @@ def binary_search(a, x, lo=0, hi=None):   # can't use a to specify default for h
     pos = bisect_left(a,x,lo,hi)          # find insertion position
     return (pos if pos != hi and a[pos] == x else -1) # don't walk off the end
 
-def dealnode(node,candidateentities,pushedatt,isleaf):
-    global nodenumi
-    print 'processing node NO.',nodenumi
-    nodenumi=nodenumi+1
-    entities=candidateentities
-
-    print 'entities count:',len(entities)
-    print 'pushedatt count:',len(pushedatt)
+def countone(e,a):
+    if binary_search(e_a,str(e)+'*'+str(a))==-1:
+        return 0
+    else :
+        return 1
     
-    att_to_chooseentities=node['attributes']+pushedatt
-    
-    showentities=[]
-    entities_lable=[]
-    if isleaf==1:
-        countentities=[None]*len(entities)
-        for i,e in enumerate(entities):
-            sum=0
-            for  a in  att_to_chooseentities :
-                sum=sum+countone(e,a)
-            countentities[i]=[sum,e]
-    
-        countentities.sort(cmp=lambda x,y : cmp(x[0], y[0]),key=None,reverse=True)
- 
-        countentitiesTop5=countentities[0:5]
- 
-        for v in countentitiesTop5:
-            showentities.append(v[1])
-            entities_lable.append(e_l[str(v[1])])
-    else:
-        showentities=random.sample(entities,5 if len(entities)>5 else len(entities))
-        for v in showentities:
-            entities_lable.append(e_l[str(v)])
+def getValue(e,a):
+    if countone(e,a)==1:
+        return r.get(e_l[str(e)]+"|"+a_l[str(a)])
 
-                              
-                              
-                              
-                              
-    attributes=node['attributes']                          
-    entities= showentities                   
+def countnode(root):
+    global nodecount;
+    nodecount=nodecount+1
+    for c in root['children']:
+        countnode(c)
 
+def chooseAttrAtOneNode(node,entities):
+    attributes=node['attributes']
     countatt=[None]*len(attributes)
     for  i,a in  enumerate(attributes) :
         sum=0
@@ -135,31 +113,68 @@ def dealnode(node,candidateentities,pushedatt,isleaf):
     for v in countattTop5:
         showattr.append(v[1]) 
         att_label.append(a_l[str(v[1])])
-    
+    node['att_label']=att_label
+    node['showattr']=showattr
 
+def chooseatts(node):
+    if len(node['children'])==0:
+        chooseAttrAtOneNode(node,node['entities'])
+        return node['entities']
+    else:
+        entities=[]
+        for c in node['children']:
+            entities=entities+chooseatts(c)
+        chooseAttrAtOneNode(node,entities)
+        return entities
+
+def chooseEntitiesOneNode(node,entities,attibutes):
+    countentities=[None]*len(entities)
+    for i,e in enumerate(entities):
+        sum=0
+        for  a in  attibutes :
+            sum=sum+countone(e,a)
+        countentities[i]=[sum,e]
+    countentities.sort(cmp=lambda x,y : cmp(x[0], y[0]),key=None,reverse=True)
+    countentitiesTop5=countentities[0:5]
+    showentities=[]
+    entities_lable=[]
+    for v in countentitiesTop5:
+        showentities.append(v[1])
+        entities_lable.append(e_l[str(v[1])])
+    node['entities_lable']=entities_lable
+    node['showentities']=showentities
+
+def chooseEntities(node,pushedAtts):
+    attributes=pushedAtts+node['showattr']
+    if len(node['children'])==0:
+        chooseEntitiesOneNode(node,node['entities'],attributes)
+        return node['showentities']
+    else:
+        entities=[]
+        for c in node['children']:
+            entities=entities+chooseEntities(c,attributes)
+        chooseEntitiesOneNode(node,entities,attributes)
+        return entities
+
+
+def createTableOneNode(node):
     e_a_v_table=[]  
-    for e in showentities:
+    for e in node['showentities']:
         e_all_attr=[]
-        for a in showattr:
+        for a in node['showattr']:
             attValue=getValue(e,a)
             e_all_attr.append(attValue)
         e_a_v_table.append(e_all_attr)
     node['table']=e_a_v_table
-    node['att_label']=att_label
-    node['entities_lable']=entities_lable
-    return showentities
 
-def pullentitypushatt(node,pushesatt):
-    if len(node['children'])==0:
-        return dealnode(node,node['entities'],pushesatt,1)  
-    else:
-        entitiesGot=[]
-        for c in node['children']:
-            entitiesGot=entitiesGot+pullentitypushatt(c,pushesatt+node['attributes'])
-        return dealnode(node,entitiesGot,pushesatt,0)
-
-
-
+def createTable(node):
+    createTableOneNode(node)
+    for c in node['children']:
+        createTable(c)
+    
+    
+    
+    
 for filename in filenames:
     try:
         filename.index('spectral');
@@ -191,35 +206,16 @@ for filename in filenames:
         e_a.append(str(v['entity'])+'*'+str(v['attribute']))
     e_a.sort()
     
-    def getValue(e,a):
-        if countone(e,a)==1:
-            return r.get(e_l[str(e)]+"|"+a_l[str(a)])
-    
-    def countone(e,a):
-        if binary_search(e_a,str(e)+'*'+str(a))==-1:
-            return 0
-        else :
-            return 1
-        
-
-    def countnode(root):
-        global nodecount;
-        nodecount=nodecount+1
-        for c in root['children']:
-            countnode(c)
-    
-    
-     
-    
-    print 'counting node number' 
     nodecount=0
     countnode(tree['root'])   
     print "Has ",nodecount," nodes"
-         
+       
+    root=tree['root']  
  
+    chooseatts(root)
+    chooseEntities(root,[])
+    createTable(root)
     
-    pullentitypushatt(tree['root'],[])  
-    root=tree['root']
     
     
     def dropuseless(root):
