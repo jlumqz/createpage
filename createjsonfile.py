@@ -82,7 +82,7 @@ def binary_search(a, x, lo=0, hi=None):   # can't use a to specify default for h
     pos = bisect_left(a,x,lo,hi)          # find insertion position
     return (pos if pos != hi and a[pos] == x else -1) # don't walk off the end
 
-def dealnode(node,candidateentities):
+def dealnode(node,candidateentities,isleaf):
     global nodenumi
     print 'processing node NO.',nodenumi
     nodenumi=nodenumi+1
@@ -91,6 +91,8 @@ def dealnode(node,candidateentities):
     print 'entities count:',len(entities)
     print 'attributes count:',len(attributes)
 
+    if isleaf==0:
+        entities=random.sample(entities,5 if len(entities)>5 else len(entities))
 
     countatt=[None]*len(attributes)
     for  i,a in  enumerate(attributes) :
@@ -110,7 +112,7 @@ def dealnode(node,candidateentities):
     countentities=[None]*len(entities)
     for i,e in enumerate(entities):
         sum=0
-        for  a in  attributes :
+        for  a in  showattr :
             sum=sum+countone(e,a)
         countentities[i]=[sum,e]
 
@@ -140,20 +142,21 @@ def dealnode(node,candidateentities):
 
 def pullentity(node):
     if len(node['children'])==0:
-        return dealnode(node,node['entities'])  
+        return dealnode(node,node['entities'],1)  
     else:
         entitiesGot=[]
         for c in node['children']:
             entitiesGot=entitiesGot+pullentity(c)
-        return dealnode(node,entitiesGot)
+        return dealnode(node,entitiesGot,0)
 
 
 
 for filename in filenames:
     try:
         filename.index('spectral');
-    except:
         continue
+    except:
+        pass
     nodenumi=0
     print 'loading json tree:',filename
     tree = json.loads(open(basedir+filename).read())
