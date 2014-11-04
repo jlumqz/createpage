@@ -82,17 +82,44 @@ def binary_search(a, x, lo=0, hi=None):   # can't use a to specify default for h
     pos = bisect_left(a,x,lo,hi)          # find insertion position
     return (pos if pos != hi and a[pos] == x else -1) # don't walk off the end
 
-def dealnode(node,candidateentities,isleaf):
+def dealnode(node,candidateentities,pushedatt,isleaf):
     global nodenumi
     print 'processing node NO.',nodenumi
     nodenumi=nodenumi+1
     entities=candidateentities
-    attributes=node['attributes']
-    print 'entities count:',len(entities)
-    print 'attributes count:',len(attributes)
 
-    if isleaf==0:
-        entities=random.sample(entities,5 if len(entities)>5 else len(entities))
+    print 'entities count:',len(entities)
+    print 'pushedatt count:',len(pushedatt)
+    
+    
+    showentities=[]
+    entities_lable=[]
+    if isleaf==1:
+        countentities=[None]*len(entities)
+        for i,e in enumerate(entities):
+            sum=0
+            for  a in  pushedatt :
+                sum=sum+countone(e,a)
+            countentities[i]=[sum,e]
+    
+        countentities.sort(cmp=lambda x,y : cmp(x[0], y[0]),key=None,reverse=True)
+ 
+        countentitiesTop5=countentities[0:5]
+ 
+        for v in countentitiesTop5:
+            showentities.append(v[1])
+            entities_lable.append(e_l[str(v[1])])
+    else:
+        showentities=random.sample(entities,5 if len(entities)>5 else len(entities))
+        for v in showentities:
+            entities_lable.append(e_l[str(v)])
+
+                              
+                              
+                              
+                              
+    attributes=node['attributes']                          
+    entities= showentities                   
 
     countatt=[None]*len(attributes)
     for  i,a in  enumerate(attributes) :
@@ -107,25 +134,6 @@ def dealnode(node,candidateentities,isleaf):
     for v in countattTop5:
         showattr.append(v[1]) 
         att_label.append(a_l[str(v[1])])
-        
-
-    countentities=[None]*len(entities)
-    for i,e in enumerate(entities):
-        sum=0
-        for  a in  showattr :
-            sum=sum+countone(e,a)
-        countentities[i]=[sum,e]
-
-    countentities.sort(cmp=lambda x,y : cmp(x[0], y[0]),key=None,reverse=True)
-    
-
-    countentitiesTop5=countentities[0:5]
-    showentities=[]
-    entities_lable=[]
-    
-    for v in countentitiesTop5:
-        showentities.append(v[1])
-        entities_lable.append(e_l[str(v[1])])
     
 
     e_a_v_table=[]  
@@ -140,23 +148,22 @@ def dealnode(node,candidateentities,isleaf):
     node['entities_lable']=entities_lable
     return showentities
 
-def pullentity(node):
+def pullentitypushatt(node,pushesatt):
     if len(node['children'])==0:
-        return dealnode(node,node['entities'],1)  
+        return dealnode(node,node['entities'],pushesatt,1)  
     else:
         entitiesGot=[]
         for c in node['children']:
-            entitiesGot=entitiesGot+pullentity(c)
-        return dealnode(node,entitiesGot,0)
+            entitiesGot=entitiesGot+pullentitypushatt(c,pushesatt+node['attributes'])
+        return dealnode(node,entitiesGot,pushesatt,0)
 
 
 
 for filename in filenames:
     try:
         filename.index('spectral');
-        continue
     except:
-        pass
+        continue
     nodenumi=0
     print 'loading json tree:',filename
     tree = json.loads(open(basedir+filename).read())
@@ -201,11 +208,6 @@ for filename in filenames:
             countnode(c)
     
     
-    def createpage(root):
-        
-        pullentity(root)
-        for c in root['children']:
-            createpage(c)
      
     
     print 'counting node number' 
@@ -215,7 +217,7 @@ for filename in filenames:
          
  
     
-    pullentity(tree['root'])  
+    pullentitypushatt(tree['root'],[])  
     root=tree['root']
     
     
