@@ -91,6 +91,7 @@ def dealnode(node,candidateentities,pushedatt,isleaf):
     print 'entities count:',len(entities)
     print 'pushedatt count:',len(pushedatt)
     
+    att_to_chooseentities=node['attributes']+pushedatt
     
     showentities=[]
     entities_lable=[]
@@ -98,7 +99,7 @@ def dealnode(node,candidateentities,pushedatt,isleaf):
         countentities=[None]*len(entities)
         for i,e in enumerate(entities):
             sum=0
-            for  a in  pushedatt :
+            for  a in  att_to_chooseentities :
                 sum=sum+countone(e,a)
             countentities[i]=[sum,e]
     
