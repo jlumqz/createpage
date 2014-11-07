@@ -1,6 +1,5 @@
 #encoding=utf-8
-htmltmp_1='''
-<!DOCTYPE html>
+htmltmp_1='''<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
@@ -49,10 +48,19 @@ table th    {
 <script src="http://d3js.org/d3.v3.min.js"></script>
     
 <script>
+var mouse = {x: 0, y: 0};
 
+document.addEventListener('mousemove', function(e){ 
+    mouse.x = e.clientX || e.pageX; 
+    mouse.y = e.clientY || e.pageY 
+}, false);
 var margin = {top: 40, right: 120, bottom: 20, left: 120},
     width = 9600 - margin.right - margin.left,
-    height = 500 - margin.top - margin.bottom;
+    height = '''
+    
+    
+    
+htmltmp_2='''- margin.top - margin.bottom;
     
 var i = 0;
 
@@ -72,7 +80,7 @@ var svg = d3.select("body").append("svg")
 d3.json("'''
 
 
-htmltmp_2='''", function(error, data) {  
+htmltmp_3='''", function(error, data) {  
  if(error)
  {
  console.log(error);
@@ -112,7 +120,7 @@ function update(source) {
      var page='  <table   border="1"   >  <tr><th width=150 style="word-wrap:break-word;word-break:break-all;"></th>';
      title='';
      for(i=0;i<d.att_label.length;i++)
-        title=title+'<th width=150 style="word-wrap:break-word;word-break:break-all;">'+d.att_label[i]+'</th>';
+        title=title+'<th width=100 style="word-wrap:break-word;word-break:break-all;">'+d.att_label[i]+'</th>';
      page=page+title+'<tr>';
 
      content='';
@@ -122,29 +130,37 @@ function update(source) {
         onerow='<tr> <td width=150 style="word-wrap:break-word;word-break:break-all;"> '+d.entities_lable[i]+'</td>'
         for(j=0;j<d.att_label.length;j++)
         {
-            onerow=onerow+'<td width=150 style="word-wrap:break-word;word-break:break-all;">'+d.table[i][j]+'</td>';
+            onerow=onerow+'<td width=100 style="word-wrap:break-word;word-break:break-all;">'+d.table[i][j]+'</td>';
         }
         onerow=onerow+'</tr>';
         content=content+onerow;
-    //    alert(onerow)
     }
     page=page+content+'</table> '
-    //alert(title);
-    // alert(d.att_label[0]);
-      
-     
-    //    d3.select(this.parentNode).append('g').append("text").text('adfasdfads');
-         
-d3.select(this.parentNode).append("foreignObject")
-    .attr("width", 3000)
-    .attr("height", 2000)
-  .append("xhtml:body")
-    .style("font", "14px 'Helvetica Neue'")
-    .html(page);
-     
- 
-      })
-      .on('mouseout', function(d){
+    screenheight=window.screen.height;
+    screenwidth=window.screen.width;
+    
+    shiftx=d.x+750-screenwidth+10;
+   shifty=d.y+500-screenheight+10;
+  if(shiftx<0)
+      shiftx=0;
+  if(shifty<0)
+      shifty=0;
+   rx= shiftx;
+    ry= shifty; 
+
+
+            d3.select(this.parentNode).append("foreignObject")
+                .attr("width", 3000)
+                .attr("height", 2000)
+              .append("xhtml:body")
+              .style("font", "14px 'Helvetica Neue'")
+          //    .style("position", "absolute")
+            //  .style("left",300)
+             // .style("top",300)
+              .html(page);
+              
+              
+  }).on('mouseout', function(d){
       
  
         d3.select(this.parentNode).selectAll(function() { return this.getElementsByTagName("foreignObject"); }).remove();
@@ -180,23 +196,37 @@ d3.select(this.parentNode).append("foreignObject")
 
 
 import os
-filenames=os.listdir('/var/www/html/')
+filenames_height={
+            'Act.EduInst_hierarchy-spectral_20140713-0949-0m76br6.json':1000,
+            'Arch.Struct_hierarchy-spectral_20140329-1845-42iib6o.json':2000,
+            'E.NP.WW_hierarchy-spectral_20140329-1845-05k6gq3.json':2000,
+            'Event_hierarchy-spectral_20140329-1843-0m7igmx.json':1000,
+            'Infr._hierarchy-spectral_20140329-1844-43m363w.json':2000,
+            'Route_hierarchy-spectral_20140329-1844-0m7k7se.json':1000,
+            'Species_hierarchy-spectral_20140329-1846-0140ukb.json':600,
+            'Tunnel_hierarchy-spectral_20140523-0533-4ldfgin.json':500,
+           }
+
 
 basedir='/var/www/html/'
 
 findex=open(basedir+'index.html','w')
 
-for filename in filenames:
+for (filename,height) in  filenames_height.items(): 
+    print filename,height
     if filename.endswith('.json') == False:
         continue
     print >>findex,'<a target="_blank" href="'+filename+'.html">'+filename+'.html</a><br/>'
     
     fout=open(basedir+filename+'.html','w')
     print >>fout,htmltmp_1,
+    print >>fout,height,
+    print >>fout,htmltmp_2,
     print >>fout,filename,
-    print >>fout,htmltmp_2
+    print >>fout,htmltmp_3
     fout.close()
-    
+
+print >>findex,''
 findex.close()
 
 
