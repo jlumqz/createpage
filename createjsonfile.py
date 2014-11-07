@@ -97,7 +97,7 @@ def countnode(root):
     nodecount=nodecount+1
     for c in root['children']:
         countnode(c)
-
+import math
 def chooseAttrAtOneNode(node,entities):
     attributes=node['attributes']
     countatt=[None]*len(attributes)
@@ -106,8 +106,22 @@ def chooseAttrAtOneNode(node,entities):
         for e in entities:
             sum=sum+countone(e,a)
         countatt[i]=[sum,a]
-    countatt.sort(cmp=lambda x,y : cmp(x[0], y[0]),key=None,reverse=True)
-    countattTop5=countatt[0:5]
+    #countatt.sort(cmp=lambda x,y : cmp(x[0], y[0]),key=None,reverse=True)
+   # countattTop5=countatt[0:5]
+   
+   
+    
+    rankatts=[]
+    for v in countatt:
+        pxy_ttt=float(v[0])/float(sum_entities_alltree)
+        px_ttt=float(len(entities))/float(sum_entities_alltree)
+        py_ttt=float(py[str(v[1])])/float(sum_entities_alltree)
+        xxxx=float()
+        if (pxy_ttt/(px_ttt*py_ttt))>0:
+            rankatts.append([pxy_ttt*(math.log((pxy_ttt/(px_ttt*py_ttt)),2)),v[1]])
+    rankatts.sort(cmp=lambda x,y : cmp(x[0], y[0]),key=None,reverse=True)
+  #  print rankatts
+    countattTop5=rankatts[0:5]
     showattr=[]
     att_label=[]
     for v in countattTop5:
@@ -188,6 +202,7 @@ def createTable(node):
 for filename in filenames:
     try:
         filename.index('spectral');
+   #     filename.index('Tunnel_hierarchy')
     except:
         continue
     nodenumi=0
@@ -211,10 +226,18 @@ for filename in filenames:
     for   a_l_p in attribute_labels_p:
         a_l[str(a_l_p['id'])]=a_l_p['label']
       
- 
+    py=dict()
     for v in e_a_p:
         e_a.append(str(v['entity'])+'*'+str(v['attribute']))
+        try:
+            py_t=py[str(v['attribute'])]
+            py[str(v['attribute'])]=py_t+1
+        except:
+            py[str(v['attribute'])]=1
     e_a.sort()
+    #print py
+    
+    sum_entities_alltree=len(entity_labels_p)
     
     nodecount=0
     countnode(tree['root'])   
